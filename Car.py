@@ -1,4 +1,3 @@
-# MQTT Callbacks
 # pip install callbacks
 # pip install paho-mqtt
 # https://mosquitto.org/download/
@@ -17,7 +16,7 @@ import queue
 q = queue.Queue()
 
 topic =""
-stepsMax = 0  #7000
+stepsMax = 0 
 
 from getmac import get_mac_address as gma
 mac = gma()
