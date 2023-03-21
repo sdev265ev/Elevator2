@@ -121,7 +121,7 @@ while True:
 		print("received from queue ",str(msg.payload.decode("utf-8")))		
 		payload = msg.payload.decode('utf-8')
 		topic = msg.topic
-
+		print (ID + '/MoveCar')
 		if topic == (ID + '/MoveCar'):
 			MoveCar(int(payload))
 			PublishMessage('MoveCar: ', payload)
