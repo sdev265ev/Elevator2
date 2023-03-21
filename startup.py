@@ -124,8 +124,8 @@ while True:
 		print (topic)
 		if topic == ID + '/MoveCar':
 			print (ID + 'MoveCar2qqqqqq')
-			MoveCar(int(payload))
-			PublishMessage('MoveCar: ', payload)
+			sf.MoveMotor(int(payload))
+			
 			
 		elif topic == (ID + '/StepWaitTime'):
 			Globals.StepWaitTime = float(payload)
