@@ -125,6 +125,7 @@ while True:
 		payload = msg.payload.decode('utf-8')
 		topic = msg.topic
 		print (topic)
+		print(ID + '/MoveCar')
 		if topic == ID + '/MoveCar':
 			print (ID + 'MoveCar2qqqqqq')
 			sd.MoveMotor(int(payload))
