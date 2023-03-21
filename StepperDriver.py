@@ -70,7 +70,6 @@ def MoveMotor(steps):
             # At top, input is high/true when switch closes.
             # Can't go higher than top.
             print("StepperDriver: Top limit reached")
-            Global.
             # Set both H-Bridges to 0 volts to not draw power.
             resetMotor()
             Global.AtTop = True
