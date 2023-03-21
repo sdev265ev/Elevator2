@@ -121,12 +121,12 @@ while True:
 		print("received from queue ",str(msg.payload.decode("utf-8")))		
 		payload = msg.payload.decode('utf-8')
 		topic = msg.topic
-		print (ID + '/MoveCar')
-		if topic == (ID + '/MoveCar'):
+		print (topic)
+		if topic == '/MoveCar':
+			print (ID + '/MoveCar2')
 			MoveCar(int(payload))
 			PublishMessage('MoveCar: ', payload)
-			MoveCar(int(payload))
-
+			
 		elif topic == (ID + '/StepWaitTime'):
 			Globals.StepWaitTime = float(payload)
 			PublishMessage('StepWaitTime', str(Globals.StepWaitTime))
