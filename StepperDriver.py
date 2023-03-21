@@ -63,7 +63,7 @@ def MoveMotor(steps):
             
             # Set both H-Bridges to 0 volts to not draw power.
             resetMotor()
-            return stepCount
+            return 0
 
         elif not GPIO.input(LSTopPin) and stepDirection == 1:
             # At top, input is high/true when switch closes.
