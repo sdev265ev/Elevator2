@@ -1,6 +1,7 @@
 import time
 #import TestRPi as GPIO
 import RPi.GPIO as GPIO
+import Globals
 
 # Allow for hystersis of the limit switches.
 # It will take n steps for the limit switch to actually open.
