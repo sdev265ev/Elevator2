@@ -94,5 +94,5 @@ def MoveMotor(steps):
                 stepSeqCounter = len(Seq) + stepDirection
                 
         stepCount += 1
-        time.sleep(Globals.CarStepWaitTime) # Wait before moving on to next step.
+        time.sleep(Globals.StepWaitTime ) # Wait before moving on to next step.
     return stepCount
