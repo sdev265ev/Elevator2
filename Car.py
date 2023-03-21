@@ -95,7 +95,7 @@ while True:
 		print(ID + '/MoveCar')
 		if topic == ID + '/MoveCar':
 			steps = sd.MoveMotor(int(payload))
-			PublishMessage('Steps', str(steps))
+			PublishMessage('Stepszzz', str(steps))
 			
 		elif topic == (ID + '/StepWaitTime'):
 			Globals.StepWaitTime = float(payload)
