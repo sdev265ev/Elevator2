@@ -24,39 +24,6 @@ mac = gma()
 print(mac)
 ID = mac[-5:] 
 print (ID)
-
-def MoveCar(steps):
-	print("stepper: ", steps)
-	if  steps == 0: 
-		return 0
-	
-	elif Globals.StopNow == True:
-		PublishMessage('event', 'Car Move stopped')
-		return steps
-
-	elif steps < 0 : stepDirection = -1
-
-	elif steps > 0 : stepDirection = 1
-
-	if Globals.CarHeight + steps > stepsMax:
-		Globals.CarHeight = stepsMax
-		PublishMessage('event', 'At top floor')
-
-	elif Globals.CarHeight + steps < 0:
-		Globals.CarHeight = 0 
-		PublishMessage('event', 'Car At bottom floor')
-
-	else:
-		PublishMessage('event', 'Moving Car')
-		### steps = sd.moveMotor(steps)
-		for x in range(steps):
-			time.sleep(Globals.StepWaitTime * 5 )
-		PublishMessage('event', 'Car move complete')
-		Globals.CarHeight += steps
-
-	return Globals.CarHeight
-
-
 def PublishMessage(topic, msg):
 	topic = ID + 'out/'   + topic
 	result = client.publish(topic, msg)
@@ -118,7 +85,7 @@ while True:
 		PublishMessage('Queue Size: ', str(q.qsize()))
 		# print ('queue size: ', q.qsize())
 		msg = q.get()
-		print ('q max: ', q.maxsize)
+		#print ('q max: ', q.maxsize)
 		if msg is None:
 			continue
 		print("received from queue ",str(msg.payload.decode("utf-8")))		
@@ -127,9 +94,8 @@ while True:
 		print (topic)
 		print(ID + '/MoveCar')
 		if topic == ID + '/MoveCar':
-			print (ID + 'MoveCar2qqqqqq')
-			sd.MoveMotor(int(payload))
-			
+			steps = sd.MoveMotor(int(payload))
+			PublishMessage('Steps', str(steps))
 			
 		elif topic == (ID + '/StepWaitTime'):
 			Globals.StepWaitTime = float(payload)
