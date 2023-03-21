@@ -59,20 +59,21 @@ def MoveMotor(steps):
         elif not GPIO.input(LSBottomPin) and stepDirection == -1:
             # At bottom, input is low/false when switch closes.
             # Can't go lower than bottom.
-            print("StepperDriveClass: bottom limit reached")
+            print("StepperDriver: bottom limit reached")
             
             # Set both H-Bridges to 0 volts to not draw power.
             resetMotor()
+            Global.AtBottom = True
             return 0
 
         elif not GPIO.input(LSTopPin) and stepDirection == 1:
             # At top, input is high/true when switch closes.
             # Can't go higher than top.
             print("StepperDriver: Top limit reached")
-
+            Global.
             # Set both H-Bridges to 0 volts to not draw power.
             resetMotor()
-
+            Global.AtTop = True
             return stepCount
 
         else:
