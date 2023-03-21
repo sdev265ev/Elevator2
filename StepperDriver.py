@@ -43,6 +43,7 @@ def moveMotor(steps):
 
     stepCount = 0
     stepSeqCounter = 0	
+    print("sd: " , steps)
     while stepCount <= steps:
         # Each loop will rotate the stepper motor one step.
         if globals.StopNow == True:
