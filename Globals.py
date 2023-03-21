@@ -2,5 +2,5 @@
 StepWaitTime = .005
 StopNow = False
 CarHeight = 0
-AtTop = false
-AtBottom = false
+AtTop = False
+AtBottom = False
