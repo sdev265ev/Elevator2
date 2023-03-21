@@ -39,7 +39,7 @@ def resetMotor():
         GPIO.output(pin, False)
 
 def MoveMotor(steps):
-    SetUp()
+    # SetUp()
     print('MoveMotor: ', steps)
     stepDirection = 1
     if steps < 0 :
