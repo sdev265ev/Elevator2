@@ -73,7 +73,7 @@ PublishMessage('StopNow', str(Globals.StopNow))
 
 # q.empty		# Clear the queue before loop
 
-sd.SetUp()
+sd.SetUpGPIO()
 
 print ("starting loop as new thread")
 
