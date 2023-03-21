@@ -47,7 +47,7 @@ def MoveMotor(steps):
     print("sd: " , steps)
     while stepCount <= steps:
         # Each loop will rotate the stepper motor one step.
-        if globals.StopNow == True:
+        if Globals.StopNow == True:
             # Emergency Stop
             resetMotor()
             return stepCount
@@ -90,5 +90,5 @@ def MoveMotor(steps):
                 stepSeqCounter = len(Seq) + stepDirection
                 
         stepCount += 1
-        time.sleep(globals.CarStepWaitTime) # Wait before moving on to next step.
+        time.sleep(Globals.CarStepWaitTime) # Wait before moving on to next step.
     return stepCount
