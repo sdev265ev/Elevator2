@@ -1,78 +1,144 @@
-# Original Author: Bonnie Clifton
-
+# MQTT Callbacks
+# pip install callbacks
+# pip install paho-mqtt
+# https://mosquitto.org/download/
+# mosquitto-2.0.15-install-windows-x64.exe 
+import paho.mqtt.client as mqtt
 import time
-import config
-import RPi.GPIO as GPIO
+import Globals
+import StepperDriver as sd
+# from callbacks import *
 
-from StepperDriverClass import StepperDriverClass
+#broker ="mqtt.eclipseprojects.io" 
+#broker ="test.mosquitto.org"
+broker ="10.81.104.102" 
 
-def CarManager():
-	# The stepper driver is a class. Create an instance for the lift stepper motor and one for the door stepper motor.
-	Car = StepperDriverClass(id, [31,29,7,5], 26, 24 ) # Create an instance of the stepper motor driver.
+import queue
+q = queue.Queue()
+
+topic =""
+stepsMax = 0  #7000
+
+from getmac import get_mac_address as gma
+mac = gma()
+print(mac)
+ID = mac[-5:] 
+print (ID)
+
+def MoveCar(steps):
+	print("stepper: ", steps)
+	if  steps == 0: 
+		return 0
 	
-	
-	# Begin car intialization to find the stepper motor steps required to move the car to the top floor
-	# Bottom floor is like a reference position
-	print ('CarManager: Moving to bottom floor')
-	Car.moveMotor(-1000000)
-	time.sleep(.5)
-	
-	print ('CarManager: Moving to top floor to count steps')
-	# Will stop when car reaches limit switch.
-	totalSteps = Car.moveMotor(1000000)
-	
-	#the total steps is a measure of the distance from the bottom to the top floor
-	#  Used to find the number of steps to a given floor (no detection device at each floor)
-	print ("CarManager: Total steps: ", totalSteps)
-	time.sleep(1)		# Pause may not be needed
+	elif Globals.StopNow == True:
+		PublishMessage('event', 'Car Move stopped')
+		return steps
+
+	elif steps < 0 : stepDirection = -1
+
+	elif steps > 0 : stepDirection = 1
+
+	if Globals.CarHeight + steps > stepsMax:
+		Globals.CarHeight = stepsMax
+		PublishMessage('event', 'At top floor')
+
+	elif Globals.CarHeight + steps < 0:
+		Globals.CarHeight = 0 
+		PublishMessage('event', 'Car At bottom floor')
+
+	else:
+		PublishMessage('event', 'Moving Car')
+		### steps = sd.moveMotor(steps)
+		for x in range(steps):
+			time.sleep(Globals.StepWaitTime * 5 )
+		PublishMessage('event', 'Car move complete')
+		Globals.CarHeight += steps
+
+	return Globals.CarHeight
+
+
+def PublishMessage(topic, msg):
+	topic = ID + 'out/'   + topic
+	result = client.publish(topic, msg)
+	# result: [0, 1]
+	print (result)
+	status = result[0]
+	if status == 0:
+		1==1
+		# print("Sent " + msg + " to topic " + topic)
+	else:
+		print("Failed to send message to topic " + topic)
+		print("Topic: " + topic + "   Message: " + msg)
+
+def on_message(client, userdata, msg):
+	#callback when a new message is posted at MQTT server
+	#print("message qos=",msg.qos)
+	#print("message retain flag=",msg.retain)
+	#PublishMessage('event', 'message retain flag: ' + str(msg.retain))
+	#payload = msg.payload.decode('utf-8')
+	#topic = msg.topic
+	q.put(msg)
+
+def on_connect(client, userdata, flags, rc):
+	if rc == 0:
+		print("Connected to MQTT Broker!")
+		PublishMessage('event', 'MQTT connected')
+	else:
+		print("Failed to connect, return code %d\n", rc)	
+
+def on_disconnect(client, userdata, flags, rc):
+	if rc==0: print ("Callback: Disconnected. Code: " + str(rc))
 		
-	#print ('CarManager: Moving to bottom floor')
-	Car.moveMotor(-1000000)
-		
-	# Setting parameters for directions, height (in steps) of elevator, and initial floor.
-	floor = 1
-	direction = 1
-	stepsPerFloor = totalSteps / (topFloor - 1)
-	
-	# tell the master controller where this car is currently loacated (which will be on the current floor)
-	UpdateMaster(config.CarFloorStopList)
-	
-	# ====================== MAIN LOOP ===============================
-	print ('CarManager: Starting main loop')
-	currentFloor = 1
+client = mqtt.Client("elevator")
+client.on_connect = on_connect
 
-	while True:
-		# Poll the floor stop list continuously.
-		# The floor poll will look ahead for floors to stop at.
-		# If a floor stop is found, the car is "pulled" to that floor - up or sown.
-		# Along the way,  at each floor is checked to see if a new stop has come in,
-		#    either from inside the car or from the master controller.
+client.message_callback_add(ID + '/#', on_message)
+client.connect(broker)
+client.subscribe(ID +'/#')
 
-		if config.CarFloorStopList[floor] == 1:
-			# We are scanning the call list looking for a floor call (floor =  1 value)
-			# We must physically move the car to this floor
-			# The floor being checked may not be where the car is actually currently located.
-			# It may be above or below the checked floor.
-			while currentFloor != floor:
-				# Move the car until a stop floor is reached.
-				if (floor - currentFloor) > 0:
-					# Move car up toward logical floor.
-					moveDirection = 1
-				else:
-					#  otherwise we new o move it downward
-					moveDirection = -1
+# Initial Start Default Settings
+Globals.StepWaitTime = .0015
+Globals.StopNow = False
+Globals.CarHeight = 0
 
-				# Wait for the door to close
-				Car.moveMotor(stepsPerFloor * moveDirection)		# Move one floor.
-				currentFloor += moveDirection				# Now moved, update floor.
-				config.CarFloorStopList[0] = currentFloor * direction	# Update list for new floor and direction.
-			config.CarFloorStopList[currentFloor] = 0			# Clear list entry for this floor.
-			clm.CarLampManager(currentFloor, 0) 				# Car lamp turned off for this floor
-			UpdateMaster(config.CarFloorStopList)				# Tell master the floor where now located
-	
-			# Change direction if top or bottom floor reached.
-		if floor > topFloor - 1:
-			direction = -1
-		if floor < bottomFloor + 1: 
-			direction = 1
-		time.sleep(1)
+PublishMessage('StepWaitTime', str(Globals.StepWaitTime))
+PublishMessage('CarHeight', str(Globals.CarHeight))
+PublishMessage('StopNow', str(Globals.StopNow))
+
+# q.empty		# Clear the queue before loop
+
+sd.SetUp()
+
+print ("starting loop as new thread")
+
+client.loop_start()
+while True:
+	#time.sleep(.1)
+	if not q.empty():
+		PublishMessage('Queue Size: ', str(q.qsize()))
+		# print ('queue size: ', q.qsize())
+		msg = q.get()
+		print ('q max: ', q.maxsize)
+		if msg is None:
+			continue
+		print("received from queue ",str(msg.payload.decode("utf-8")))		
+		payload = msg.payload.decode('utf-8')
+		topic = msg.topic
+		print (topic)
+		print(ID + '/MoveCar')
+		if topic == ID + '/MoveCar':
+			print (ID + 'MoveCar2qqqqqq')
+			sd.MoveMotor(int(payload))
+			
+			
+		elif topic == (ID + '/StepWaitTime'):
+			Globals.StepWaitTime = float(payload)
+			PublishMessage('StepWaitTime', str(Globals.StepWaitTime))
+			PublishMessage('event', 'Changed Lift Speed: ' + str(Globals.StepWaitTime))
+
+		elif topic == (ID + '/StopNow'):
+			if payload == 'True':
+				Globals.StopNow = True
+			else:
+				Globals.StopNow = False
+				
