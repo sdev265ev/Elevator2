@@ -104,7 +104,7 @@ PublishMessage('StepWaitTime', str(Globals.StepWaitTime))
 PublishMessage('CarHeight', str(Globals.CarHeight))
 PublishMessage('StopNow', str(Globals.StopNow))
 
-q.empty		# Clear the queue before loop
+# q.empty		# Clear the queue before loop
 print ("starting loop as new thread")
 
 client.loop_start()
