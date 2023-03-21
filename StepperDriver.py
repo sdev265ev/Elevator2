@@ -23,8 +23,8 @@ def SetUp():
     GPIO.setmode(GPIO.BOARD)
 
     # Set up top and bottom limit switches.
-    ### GPIO.setup(LSBottomPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    ### GPIO.setup(LSTopPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(LSBottomPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(LSTopPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     # Set all pins as output and set to sync current.
     for pin in stepMotorPins:
