@@ -26,6 +26,7 @@ ID = mac[-5:]
 print (ID)
 
 def MoveCar(steps):
+	print("stepper: ", steps)
 	if  steps == 0: 
 		return 0
 	
