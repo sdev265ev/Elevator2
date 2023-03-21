@@ -87,11 +87,10 @@ while True:
 		#print ('q max: ', q.maxsize)
 		if msg is None:
 			continue
-		print("received from queue ",str(msg.payload.decode("utf-8")))		
+		print("received from queue ", topic, ': " ,str(msg.payload.decode("utf-8")))		
 		payload = msg.payload.decode('utf-8')
 		topic = msg.topic
 		print (topic)
-		print(ID + '/MoveCar')
 		if topic == ID + '/MoveCar':
 			steps = sd.MoveMotor(int(payload))
 			PublishMessage('StepsMoved', str(steps))
