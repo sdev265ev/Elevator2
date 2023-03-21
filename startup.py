@@ -14,7 +14,7 @@ import StepperDriver as sd
 broker ="10.81.104.102" 
 
 import queue
-q = queue
+q = queue.Queue()
 
 topic =""
 stepsMax =7000
