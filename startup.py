@@ -31,8 +31,8 @@ def MoveCar(steps):
 		return 0
 	
 	elif Globals.StopNow == True:
-		return steps
 		PublishMessage('event', 'Car Move stopped')
+		return steps
 
 	elif steps < 0 : stepDirection = -1
 
