@@ -36,6 +36,7 @@ def resetMotor():
         GPIO.output(pin, False)
 
 def moveMotor(steps):
+    PublishMessage('MoveMotor: ', payload)
     stepDirection = 1
     if steps < 0 :
         stepDirection = -1
