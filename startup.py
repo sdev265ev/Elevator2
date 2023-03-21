@@ -17,7 +17,7 @@ import queue
 q = queue.Queue()
 
 topic =""
-stepsMax =7000
+stepsMax = 0  #7000
 
 from getmac import get_mac_address as gma
 mac = gma()
@@ -97,7 +97,7 @@ client.connect(broker)
 client.subscribe(ID +'/#')
 
 # Initial Start Default Settings
-Globals.StepWaitTime = .01
+Globals.StepWaitTime = .0015
 Globals.StopNow = False
 Globals.CarHeight = 0
 
