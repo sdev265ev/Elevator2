@@ -12,22 +12,24 @@ import Globals
 
 # Variables defined here are instance variables available in instances of the class only.
 # Use BCM GPIO references instead of physical pin numbers.
-GPIO.setmode(GPIO.BOARD)
 
-stepMotorPins =  [31,29,7,5]
-LSBottomPin = 26  	
-LSTopPin = 24  	
-stepCount = 0	
-Seq = [[1,0,0,1], [1,0,0,0], [1,1,0,0], [0,1,0,0], [0,1,1,0], [0,0,1,0], [0,0,1,1], [0,0,0,1]]
+def SetUp():
+    GPIO.setmode(GPIO.BOARD)
 
-# Set up top and bottom limit switches.
-### GPIO.setup(LSBottomPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
-### GPIO.setup(LSTopPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    stepMotorPins =  [31,29,7,5]
+    LSBottomPin = 26  	
+    LSTopPin = 24  	
+    stepCount = 0	
+    Seq = [[1,0,0,1], [1,0,0,0], [1,1,0,0], [0,1,0,0], [0,1,1,0], [0,0,1,0], [0,0,1,1], [0,0,0,1]]
 
-# Set all pins as output and set to sync current.
-for pin in stepMotorPins:
-    GPIO.setup(pin,GPIO.OUT)
-    GPIO.output(pin, False)
+    # Set up top and bottom limit switches.
+    ### GPIO.setup(LSBottomPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    ### GPIO.setup(LSTopPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    # Set all pins as output and set to sync current.
+    for pin in stepMotorPins:
+        GPIO.setup(pin,GPIO.OUT)
+        GPIO.output(pin, False)
 
 # Variables defined here are called class variables and are in all instances of this class.
 # Each group of 4 values (bits) are applied to the H-Bridge controller inputs by the RPi outputs pins.
