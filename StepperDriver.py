@@ -63,7 +63,7 @@ def MoveMotor(steps):
             
             # Set both H-Bridges to 0 volts to not draw power.
             resetMotor()
-            Global.AtBottom = True
+            Globals.AtBottom = True
             return 0
 
         elif not GPIO.input(LSTopPin) and stepDirection == 1:
@@ -72,7 +72,7 @@ def MoveMotor(steps):
             print("StepperDriver: Top limit reached")
             # Set both H-Bridges to 0 volts to not draw power.
             resetMotor()
-            Global.AtTop = True
+            Globals.AtTop = True
             return stepCount
 
         else:
