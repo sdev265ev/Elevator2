@@ -1,4 +1,4 @@
 #Global variables
-StepWaitTime = .01
+StepWaitTime = .005
 StopNow = False
 CarHeight = 0
