@@ -135,6 +135,4 @@ while True:
 				Globals.StopNow = True
 			else:
 				Globals.StopNow = False
-			
-
-		
+				
