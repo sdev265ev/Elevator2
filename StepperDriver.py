@@ -13,14 +13,14 @@ import Globals
 # Variables defined here are instance variables available in instances of the class only.
 # Use BCM GPIO references instead of physical pin numbers.
 
-def SetUp():
-    GPIO.setmode(GPIO.BOARD)
-
     stepMotorPins =  [31,29,7,5]
     LSBottomPin = 26  	
     LSTopPin = 24  	
     stepCount = 0	
     Seq = [[1,0,0,1], [1,0,0,0], [1,1,0,0], [0,1,0,0], [0,1,1,0], [0,0,1,0], [0,0,1,1], [0,0,0,1]]
+
+def SetUp():
+    GPIO.setmode(GPIO.BOARD)
 
     # Set up top and bottom limit switches.
     ### GPIO.setup(LSBottomPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)
