@@ -123,8 +123,8 @@ while True:
 
 		if topic == (ID + '/MoveCar'):
 			MoveCar(int(payload))
-			PublishMessage('CarHeight', str(Globals.CarHeight))
-			sd.moveMotor(int(payload))
+			PublishMessage('MoveCar: ', payload)
+			MoveCar(int(payload))
 
 		elif topic == (ID + '/StepWaitTime'):
 			Globals.StepWaitTime = float(payload)
