@@ -106,6 +106,9 @@ PublishMessage('CarHeight', str(Globals.CarHeight))
 PublishMessage('StopNow', str(Globals.StopNow))
 
 # q.empty		# Clear the queue before loop
+
+sd.SetUp():
+
 print ("starting loop as new thread")
 
 client.loop_start()
