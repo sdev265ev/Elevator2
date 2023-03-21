@@ -11,7 +11,7 @@ import StepperDriver as sd
 
 #broker ="mqtt.eclipseprojects.io" 
 #broker ="test.mosquitto.org"
-broker ="127.0.0.1" 
+broker ="10.81.104.102" 
 
 import queue
 q = queue
