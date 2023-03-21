@@ -19,7 +19,7 @@ LSTopPin = 24
 stepCount = 0	
 Seq = [[1,0,0,1], [1,0,0,0], [1,1,0,0], [0,1,0,0], [0,1,1,0], [0,0,1,0], [0,0,1,1], [0,0,0,1]]
 
-def SetUp():
+def SetUpGPIO():
     GPIO.setmode(GPIO.BOARD)
 
     # Set up top and bottom limit switches.
