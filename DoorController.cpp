@@ -22,8 +22,8 @@ string command = "stop";
 
 int LED = 2;
 String LedState = "off";
-int switchPinUP = 21;
-int switchPinDW = 21;
+int switchPinOpen = 21;
+int switchPinClosed = 21;
 int bridgeA = 21;
 int bridgeB = 21;
 bool LimitClose = false;
@@ -173,8 +173,8 @@ void setup()
 	// ############# Configure I/0 pins #############################################
 
 	Serial.println("Setting limit switch callbacks...");
-	attachInterrupt(LimitOpen, OpenCallBack, RISING);
-	attachInterrupt(LimitClose, CloseCallBack, RISING);
+	attachInterrupt(switchPinOpen, OpenCallBack, RISING);
+	attachInterrupt(switchPinClosed, CloseCallBack, RISING);
 	// zero volts across motor to turn off
 	digitalWrite(bridgeA, LOW);
 	digitalWrite(bridgeB, LOW);
@@ -221,7 +221,7 @@ void loop()
 		{
 			digitalWrite(bridgeA, HIGH);
 			digitalWrite(bridgeB, HIGH);
-			msg = 'hung';
+			msg = 'Schrödinger';
 			mqttTopic = 'status';
 			mqttClient.publish(mqttTopic.c_str(), msg.c_str());
 		}
