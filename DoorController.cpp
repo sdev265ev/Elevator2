@@ -22,8 +22,8 @@ string command = "stop";
 
 int LED = 2;
 String LedState = "off";
-int switchUP = 21;
-int switchDW = 21;
+int switchPinUP = 21;
+int switchPinDW = 21;
 int bridgeA = 21;
 int bridgeB = 21;
 bool LimitClose = false;
@@ -32,7 +32,6 @@ bool LimitOpen = false;
 // variables to keep track of the timing of recent interrupts
 unsigned long button_time = 0;
 unsigned long last_button_time = 0;
-bool buttonPressed = false;
 
 //====== methods ===========================================
 WiFiClient espClient;
@@ -117,8 +116,8 @@ void setup()
 
 	// Configure I/O pins
 	pinMode(LED, OUTPUT);
-	pinMode(switchUP, INPUT_PULLDOWN);
-	pinMode(switchDW, INPUT_PULLDOWN);
+	pinMode(switchPinUP, INPUT_PULLDOWN);
+	pinMode(switchPinDW, INPUT_PULLDOWN);
 	pinMode(bridgeA, OUTPUT);
 	pinMode(bridgeB, OUTPUT);
 
@@ -173,7 +172,7 @@ void setup()
 
 	// ############# Configure I/0 pins #############################################
 
-	Serial.println("Setting limit switches callbacks...");
+	Serial.println("Setting limit switch callbacks...");
 	attachInterrupt(LimitOpen, OpenCallBack, RISING);
 	attachInterrupt(LimitClose, CloseCallBack, RISING);
 	// zero volts across motor to turn off
@@ -188,7 +187,6 @@ void setup()
 	msg = MACaddress;
 	mqttTopic = deviceID + "/info/MACaddress/";
 	mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-
 }
 // END OF SETUP
 
@@ -201,31 +199,25 @@ void loop()
 		reconnect();
 	}
 
-	if (command = 'open')
+	if (command = 'open' && !LimitOpen)
 	{
-		if (!LimitOpen)
-		{
-			digitalWrite(bridgeA, HIGH);
-			digitalWrite(bridgeB, LOW);
-			msg = 'open';
-			mqttTopic = 'status';
-			mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-		}
+		digitalWrite(bridgeA, HIGH);
+		digitalWrite(bridgeB, LOW);
+		msg = 'open';
+		mqttTopic = 'status';
+		mqttClient.publish(mqttTopic.c_str(), msg.c_str());
 	}
-	if (command = 'close')
+	if (command = 'close' && !LimitClose)
 	{
-		if (!LimitClose )
-		{
-			digitalWrite(bridgeA, LOW);
-			digitalWrite(bridgeB, HIGH);
-			msg = 'closed';
-			mqttTopic = 'status';
-			mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-		}
+		digitalWrite(bridgeA, LOW);
+		digitalWrite(bridgeB, HIGH);
+		msg = 'closed';
+		mqttTopic = 'status';
+		mqttClient.publish(mqttTopic.c_str(), msg.c_str());
 	}
 	if (command = 'stop')
 	{
-		if (LimitClose && LimitOpen)
+		if (!LimitClose && !LimitOpen)
 		{
 			digitalWrite(bridgeA, HIGH);
 			digitalWrite(bridgeB, HIGH);
@@ -234,6 +226,7 @@ void loop()
 			mqttClient.publish(mqttTopic.c_str(), msg.c_str());
 		}
 	}
+	msg = "";
 	mqttClient.loop();
 }
 
@@ -241,11 +234,11 @@ void loop()
 void setup()
 {
 	Serial.begin(9600);
-	Serial.print("Switch Down")
+	Serial.print("setup")
 }
 
 void loop()
 {
-	Serial.println("Switch Down")
+	Serial.println("looping")
 }
 */
