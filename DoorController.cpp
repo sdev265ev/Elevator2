@@ -231,14 +231,17 @@ void loop()
 }
 
 /*
-void setup()
-{
-	Serial.begin(9600);
-	Serial.print("setup")
+#include <Arduino.h>
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  Serial.print("Message arrived on topic: ");
 }
 
-void loop()
-{
-	Serial.println("looping")
+void loop() {
+  // put your main code here, to run repeatedly:
+  delay(500);
+  Serial.print("Message arrived on topic: ");
 }
 */
