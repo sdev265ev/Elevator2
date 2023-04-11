@@ -1,8 +1,9 @@
 // DoorController.cpp
 
 #include <Arduino.h>
-#include <WiFi.h>
+// #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ESP8266WiFi.h>
 
 const char *ssid = "sdev265";
 const char *password = "sdev265$";
@@ -18,14 +19,14 @@ String deviceID;
 String mqttTopic;
 int numberKeyPresses = 0;
 String msg;
-string command = "stop";
+String command = "stop";
 
 int LED = 2;
 String LedState = "off";
-int switchPinOpen = 21;
-int switchPinClosed = 21;
-int bridgeA = 21;
-int bridgeB = 21;
+int switchPinOpen = 4;
+int switchPinClosed = 5;
+int bridgeA = 12;
+int bridgeB = 14;
 bool LimitClose = false;
 bool LimitOpen = false;
 
@@ -39,154 +40,147 @@ PubSubClient mqttClient(espClient);
 
 void mqttCallBack(char *topic, byte *message, unsigned int length)
 {
-	Serial.print("Message arrived on topic: ");
-	Serial.println(topic);
-	msg = "";
-	for (int i = 0; i < length; i++)
-	{
-		msg += (char)message[i];
-	}
-	Serial.println("Command received: ", msg);
-	command = msg;
+  Serial.print("Message arrived on topic: ");
+  Serial.println(topic);
+  msg = "";
+  for (unsigned int j = 0; j < length; j++)
+  {
+    msg += (char)message[j];
+  }
+  Serial.println("Command received: ");
+  Serial.print(msg);
+  command = msg;
 }
-
 void IRAM_ATTR OpenCallBack()
 {
-	button_time = millis();
-	numberKeyPresses++;
-	if (button_time - last_button_time > 150)
-	{
-		last_button_time = button_time;
-		LimitOpen = true;
-	}
+  button_time = millis();
+  numberKeyPresses++;
+  if (button_time - last_button_time > 150)
+  {
+    last_button_time = button_time;
+    LimitOpen = true;
+    Serial.print("Open called");
+  }
 }
 void IRAM_ATTR CloseCallBack()
 {
-	button_time = millis();
-	numberKeyPresses++;
-	if (button_time - last_button_time > 150)
-	{
-		last_button_time = button_time;
-		LimitClose = true;
-	}
+  button_time = millis();
+  numberKeyPresses++;
+  if (button_time - last_button_time > 150)
+  {
+    last_button_time = button_time;
+    LimitClose = true;
+    Serial.print("closed called");
+  }
 }
-
-// #########################################################
-void reconnect()
-
+void mqttConnect()
 {
-	// Loop until we're reconnected
-	while (!mqttClient.connected())
-	{
-		Serial.print("Attempting MQTT connection...");
-		// String clientId = "Nano33-";
-		// clientId += String(random(0xffff), HEX);
-		bool conn = mqttClient.connect("ESPClient", mqttUser, mqttPassword);
-		// delay(1000);
+  // Loop until we are reconnected
+  while (!mqttClient.connected())
+  {
+    Serial.print("Attempting MQTT connection...");
 
-		if (mqttClient.connected())
-		{
-			Serial.println("connected");
-			// ... and resubscribe
-			mqttTopic = deviceID + "/lamp";
-			Serial.println("mqttTopic..." + mqttTopic);
-			mqttClient.subscribe(mqttTopic.c_str());
-			Serial.println(" Reconnected subscribed...");
-			// delay(1000);
-		}
-		else
-		{
-			Serial.print("failed, rc=");
-			Serial.print(mqttClient.state());
-			Serial.println(" try again in 5 seconds");
-			// Wait 5 seconds before retrying
-			delay(5000);
-		}
-	}
+    Serial.println("Connecting to MQTT Server...");
+    mqttClient.setServer(mqttServer, mqttPort);
+    mqttClient.connect("ESPClient", mqttUser, mqttPassword);
+    mqttClient.setCallback(mqttCallBack);
+
+    if (mqttClient.connected())
+    {
+      Serial.println("connected");
+      // ... and resubscribe
+      mqttTopic = deviceID;
+      Serial.println("mqttTopic..." + mqttTopic);
+      mqttClient.subscribe(mqttTopic.c_str());
+      Serial.println(" Reconnected subscribed..." + mqttTopic);
+      // delay(1000);
+    }
+    else
+    {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
 }
-// ########### SETUP ####################################################################
+
+// ##### SETUP  SETUP  SETUP  SETUP  SETUP  SETUP #######
 // ######################################################################################
 void setup()
 {
-	//  put your setup code here, to run once:
-	Serial.println("Starting Setup()");
+  //  put your setup code here, to run once:
+  Serial.println("Starting Setup()");
 
-	Serial.begin(9600);
-	// 9600,14,400, 19,200, 38,400, 57,600, and 115,200 baud
+  Serial.begin(9600);
+  // 9600,14,400, 19,200, 38,400, 57,600, and 115,200 baud
 
-	// Configure I/O pins
-	pinMode(LED, OUTPUT);
-	pinMode(switchPinUP, INPUT_PULLDOWN);
-	pinMode(switchPinDW, INPUT_PULLDOWN);
-	pinMode(bridgeA, OUTPUT);
-	pinMode(bridgeB, OUTPUT);
+  // Configure I/O pins
+  pinMode(LED, OUTPUT);
+  pinMode(switchPinOpen, INPUT_PULLDOWN_16);
+  pinMode(switchPinClosed, INPUT_PULLDOWN_16);
 
-	// ################ WIFI ##############################################################
-	Serial.print("WiFi Scan start ... ");
-	int n = WiFi.scanNetworks();
-	Serial.println(String(n) + " wifi network(s) found");
-	/*
-	for (int i = 0; i < n; i++)
-	{
-	  // Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n", i + 1,WiFi.SSID(i).c_str(),
-	  //     WiFi.channel(i), WiFi.RSSI(i), WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
-	}
-	*/
-	WiFi.begin(ssid, password);
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		Serial.println("Connecting to WiFi");
-		delay(200);
-	}
-	Serial.println("Connected to the WiFi network ");
-	Serial.println("       SSID: " + String(WiFi.SSID()));
-	Serial.println("    Channel: " + String(WiFi.channel()));
-	Serial.println("   Strength: " + String(WiFi.RSSI()) + " dbm");
-	Serial.println("MAC Address:" + WiFi.macAddress());
-	MACaddress = WiFi.macAddress();
-	Serial.println("SSID: " + WiFi.SSID());
-	IPaddress = String(WiFi.localIP());
-	Serial.println("IP Address: " + IPaddress);
-	long rssi = WiFi.RSSI();
+  Serial.println("Setting limit switch callbacks...");
+  attachInterrupt(switchPinOpen, OpenCallBack, FALLING);
+  attachInterrupt(switchPinClosed, CloseCallBack, FALLING);
 
-	// ########  Device id settings ###########################################
-	deviceID = MACaddress.substring(MACaddress.length() - 5);
-	mqttTopic = deviceID + "/door";
-	mqttClient.subscribe(mqttTopic.c_str());
-	Serial.println(" Device ID: " + deviceID);
-	Serial.println(" MAC Address: " + deviceID);
+  pinMode(bridgeA, OUTPUT);
+  pinMode(bridgeB, OUTPUT);
 
-	// ######### MQTT SETUP ###########################################################
-	// https://github.com/knolleary/pubsubclient/issues/163
+  // ################ WIFI ##############################################################
+  Serial.print("WiFi Scan start ... ");
+  int n = WiFi.scanNetworks();
+  Serial.println(String(n) + " wifi network(s) found");
+  /*
+  for (int i = 0; i < n; i++)
+  {
+    // Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n", i + 1,WiFi.SSID(i).c_str(),
+    //     WiFi.channel(i), WiFi.RSSI(i), WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
+  }
+  */
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println("Connecting to WiFi");
+    delay(500);
+  }
+  Serial.println("Connected to the WiFi network ");
+  Serial.println("       SSID: " + String(WiFi.SSID()));
+  Serial.println("    Channel: " + String(WiFi.channel()));
+  Serial.println("   Strength: " + String(WiFi.RSSI()) + " dbm");
+  Serial.println("MAC Address:" + WiFi.macAddress());
+  MACaddress = WiFi.macAddress();
+  Serial.println("SSID: " + WiFi.SSID());
+  IPaddress = WiFi.localIP().toString().c_str();
+  Serial.println("IP Address: " + IPaddress);
+  // long rssi = WiFi.RSSI();
 
-	Serial.println("Connecting to MQTT Server...");
-	mqttClient.setServer(mqttServer, mqttPort);
-	mqttClient.setCallback(mqttCallBack);
-	mqttClient.connect("ESPClient", mqttUser, mqttPassword);
-	mqttClient.setCallback(mqttCallBack);
-	mqttTopic = deviceID + "/door";
-	mqttClient.subscribe(mqttTopic.c_str());
-	msg = " world";
-	mqttTopic = deviceID + "/info/Hello/";
-	mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+  // ########  Device id settings ###########################################
+  Serial.println(" MAC Address: " + deviceID);
+  deviceID = MACaddress.substring(MACaddress.length() - 5);
+  Serial.println(" Device ID: " + deviceID);
+  mqttClient.subscribe(deviceID.c_str());
 
-	// ############# Configure I/0 pins #############################################
+  // ######### MQTT SETUP ###########################################################
+  // https://github.com/knolleary/pubsubclient/issues/163
 
-	Serial.println("Setting limit switch callbacks...");
-	attachInterrupt(switchPinOpen, OpenCallBack, RISING);
-	attachInterrupt(switchPinClosed, CloseCallBack, RISING);
-	// zero volts across motor to turn off
-	digitalWrite(bridgeA, LOW);
-	digitalWrite(bridgeB, LOW);
+  msg = " world (door)";
+  mqttTopic = deviceID + "/info/Hello/";
+  mqttClient.publish(mqttTopic.c_str(), msg.c_str());
 
-	mqttTopic = deviceID + "/info/IPaddress/";
-	msg = IPaddress;
-	mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-	Serial.println("Published IP Address");
+  // zero volts across motor to turn off
+  digitalWrite(bridgeA, LOW);
+  digitalWrite(bridgeB, LOW);
 
-	msg = MACaddress;
-	mqttTopic = deviceID + "/info/MACaddress/";
-	mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+  mqttTopic = deviceID + "/info/IPaddress/";
+  msg = IPaddress;
+  mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+  Serial.println("Published IP Address");
+
+  msg = MACaddress;
+  mqttTopic = deviceID + "/info/MACaddress/";
+  mqttClient.publish(mqttTopic.c_str(), msg.c_str());
 }
 // END OF SETUP
 
@@ -194,43 +188,93 @@ void setup()
 //  #####################################################################################
 void loop()
 {
-	if (!mqttClient.connected())
-	{
-		reconnect();
-	}
+  if (!mqttClient.connected())
+  {
+    mqttConnect();
+  }
 
-	if (command = 'open' && !LimitOpen)
-	{
-		digitalWrite(bridgeA, HIGH);
-		digitalWrite(bridgeB, LOW);
-		msg = 'open';
-		mqttTopic = 'status';
-		mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-	}
-	if (command = 'close' && !LimitClose)
-	{
-		digitalWrite(bridgeA, LOW);
-		digitalWrite(bridgeB, HIGH);
-		msg = 'closed';
-		mqttTopic = 'status';
-		mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-	}
-	if (command = 'stop')
-	{
-		if (!LimitClose && !LimitOpen)
-		{
-			digitalWrite(bridgeA, HIGH);
-			digitalWrite(bridgeB, HIGH);
-			msg = 'Schrödinger';
-			mqttTopic = 'status';
-			mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-		}
-	}
-	msg = "";
-	mqttClient.loop();
+  Serial.println(LimitOpen);
+  Serial.println(LimitClose);
+  command = "open";
+  Serial.println("opening...");
+  if (command == "open" && !LimitOpen)
+  {
+    msg = "Opening";
+    mqttTopic = deviceID + "/status";
+    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+    Serial.println("Running motor CW");
+    digitalWrite(bridgeA, HIGH);
+    digitalWrite(bridgeB, LOW);
+    while (command != "stop" && !LimitOpen)
+    {
+      Serial.println("Open Limit NOT Reached" );
+    }
+    digitalWrite(bridgeA, LOW);
+    digitalWrite(bridgeB, LOW);
+    LimitOpen = false;
+    command = "";
+  }
+  LimitClose = false;
+  LimitOpen = false;
+  delay(5000);
+  command = "close";
+  Serial.println("closing...");
+  if (command == "close" && !LimitClose)
+  {
+    msg = "closing";
+    mqttTopic = deviceID + "status";
+    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+    Serial.println("Running motor CW");
+    digitalWrite(bridgeA, LOW);
+    digitalWrite(bridgeB, HIGH);
+    while (command != "stop" && !LimitClose)
+    {
+      Serial.println("close Limit not reached");
+      // digitalWrite(bridgeA, LOW);
+      // digitalWrite(bridgeB, LOW);
+    }
+    digitalWrite(bridgeA, LOW);
+    digitalWrite(bridgeB, LOW);
+    LimitClose = false;
+  }
+LimitClose = false;
+LimitOpen = false;
+delay(5000);
+}
+/*
+  if (command == "open" && !LimitOpen)
+  {
+    digitalWrite(bridgeA, HIGH);
+    digitalWrite(bridgeB, LOW);
+    msg = "open";
+    mqttTopic = deviceID + "status";
+    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+  }
+
+  if (command == "close" && !LimitClose)
+  {
+    digitalWrite(bridgeA, LOW);
+    digitalWrite(bridgeB, HIGH);
+    msg = "closed";
+    mqttTopic = deviceID + "status";
+    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+  }
+  if (command = "stop")
+  {
+    if (!LimitClose && !LimitOpen)
+    {
+      digitalWrite(bridgeA, HIGH);
+      digitalWrite(bridgeB, HIGH);
+      msg = "Schrödinger";
+      mqttTopic = deviceID + "status";
+      mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+    }
+  }
+  msg = "";
+  mqttClient.loop();
 }
 
-/*
+
 #include <Arduino.h>
 
 void setup() {
