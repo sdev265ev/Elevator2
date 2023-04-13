@@ -262,4 +262,23 @@ void loop() {
   delay(500);
   Serial.print("Message arrived on topic: ");
 }
+
+; PlatformIO Project Configuration File
+;
+;   Build options: build flags, source filter
+;   Upload options: custom upload port, speed and extra flags
+;   Library options: dependencies, extra library storages
+;   Advanced options: extra scripting
+;
+; Please visit documentation for the other options and examples
+; https://docs.platformio.org/page/projectconf.html
+
+[env:esp12e]
+monitor_speed = 9600
+platform = espressif8266
+board = esp12e
+framework = arduino
+lib_deps = 
+	khoih-prog/ESP_WifiManager@^1.12.1
+	knolleary/PubSubClient@^2.8
 */
