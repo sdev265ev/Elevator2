@@ -27,8 +27,8 @@ int switchPinOpen = 4;
 int switchPinClosed = 5;
 int bridgeA = 12;
 int bridgeB = 14;
-bool LimitClose = false;
-bool LimitOpen = false;
+bool DoorIsFullyShut = false;
+bool DoorIsFullyOpen = false;
 
 // variables to keep track of the timing of recent interrupts
 unsigned long button_time = 0;
@@ -58,8 +58,8 @@ void IRAM_ATTR OpenCallBack()
   if (button_time - last_button_time > 150)
   {
     last_button_time = button_time;
-    LimitOpen = true;
-    Serial.print("Open called");
+    DoorIsFullyOpen = true;
+    Serial.print("Open Switch closed");
   }
 }
 void IRAM_ATTR CloseCallBack()
@@ -69,8 +69,8 @@ void IRAM_ATTR CloseCallBack()
   if (button_time - last_button_time > 150)
   {
     last_button_time = button_time;
-    LimitClose = true;
-    Serial.print("closed called");
+    DoorIsFullyShut = true;
+    Serial.print("closed switch closed");
   }
 }
 void mqttConnect()
@@ -122,8 +122,8 @@ void setup()
   pinMode(switchPinClosed, INPUT_PULLDOWN_16);
 
   Serial.println("Setting limit switch callbacks...");
-  attachInterrupt(switchPinOpen, OpenCallBack, FALLING);
-  attachInterrupt(switchPinClosed, CloseCallBack, FALLING);
+  // attachInterrupt(switchPinOpen, OpenCallBack, FALLING);
+  // attachInterrupt(switchPinClosed, CloseCallBack, FALLING);
 
   pinMode(bridgeA, OUTPUT);
   pinMode(bridgeB, OUTPUT);
@@ -143,7 +143,7 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     Serial.println("Connecting to WiFi");
-    delay(500);
+    delay(200);
   }
   Serial.println("Connected to the WiFi network ");
   Serial.println("       SSID: " + String(WiFi.SSID()));
@@ -192,89 +192,63 @@ void loop()
   {
     mqttConnect();
   }
-
-  Serial.println(LimitOpen);
-  Serial.println(LimitClose);
+  Serial.println(digitalRead(switchPinOpen));
+  Serial.println(digitalRead(switchPinClosed));
   command = "open";
-  Serial.println("opening...");
-  if (command == "open" && !LimitOpen)
+
+  if (command == "open")
   {
     msg = "Opening";
     mqttTopic = deviceID + "/status";
     mqttClient.publish(mqttTopic.c_str(), msg.c_str());
     Serial.println("Running motor CW");
-    digitalWrite(bridgeA, HIGH);
-    digitalWrite(bridgeB, LOW);
-    while (command != "stop" && !LimitOpen)
+    DoorIsFullyOpen = false;
+    while (command != "stop" && !DoorIsFullyOpen)
     {
-      Serial.println("Open Limit NOT Reached" );
+      if (digitalRead(switchPinOpen) == 0)
+      {
+        DoorIsFullyOpen = true;
+      }
+      delay(100);
+      digitalWrite(bridgeA, HIGH);
+      digitalWrite(bridgeB, LOW);
+      Serial.println(digitalRead(switchPinOpen));
     }
     digitalWrite(bridgeA, LOW);
     digitalWrite(bridgeB, LOW);
-    LimitOpen = false;
-    command = "";
-  }
-  LimitClose = false;
-  LimitOpen = false;
-  delay(5000);
-  command = "close";
-  Serial.println("closing...");
-  if (command == "close" && !LimitClose)
-  {
-    msg = "closing";
-    mqttTopic = deviceID + "status";
-    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-    Serial.println("Running motor CW");
-    digitalWrite(bridgeA, LOW);
-    digitalWrite(bridgeB, HIGH);
-    while (command != "stop" && !LimitClose)
-    {
-      Serial.println("close Limit not reached");
-      // digitalWrite(bridgeA, LOW);
-      // digitalWrite(bridgeB, LOW);
-    }
-    digitalWrite(bridgeA, LOW);
-    digitalWrite(bridgeB, LOW);
-    LimitClose = false;
-  }
-LimitClose = false;
-LimitOpen = false;
-delay(5000);
-}
-/*
-  if (command == "open" && !LimitOpen)
-  {
-    digitalWrite(bridgeA, HIGH);
-    digitalWrite(bridgeB, LOW);
-    msg = "open";
-    mqttTopic = deviceID + "status";
-    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
   }
 
-  if (command == "close" && !LimitClose)
+  delay(2000);
+  command = "close";
+  if (command == "close")
   {
-    digitalWrite(bridgeA, LOW);
-    digitalWrite(bridgeB, HIGH);
-    msg = "closed";
-    mqttTopic = deviceID + "status";
+    msg = "closing";
+    mqttTopic = deviceID + "/status";
     mqttClient.publish(mqttTopic.c_str(), msg.c_str());
-  }
-  if (command = "stop")
-  {
-    if (!LimitClose && !LimitOpen)
+    Serial.println("Running motor CCW");
+
+    DoorIsFullyShut = false;
+    while (command != "stop" && !DoorIsFullyShut)
     {
-      digitalWrite(bridgeA, HIGH);
+      if (digitalRead(switchPinClosed) == 0)
+      {
+        DoorIsFullyShut = true;
+      }
+      delay(100);
+      digitalWrite(bridgeA, LOW);
       digitalWrite(bridgeB, HIGH);
-      msg = "Schrödinger";
-      mqttTopic = deviceID + "status";
-      mqttClient.publish(mqttTopic.c_str(), msg.c_str());
     }
+    digitalWrite(bridgeA, LOW);
+    digitalWrite(bridgeB, LOW);
   }
+  delay(2000);
+
   msg = "";
   mqttClient.loop();
 }
 
 
+/*
 #include <Arduino.h>
 
 void setup() {
