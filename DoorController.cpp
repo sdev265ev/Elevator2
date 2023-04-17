@@ -19,12 +19,12 @@ String deviceID;
 String mqttTopic;
 int numberKeyPresses = 0;
 String msg;
-String command = "stop";
+String command = msg;
 
 int LED = 2;
 String LedState = "off";
-int switchPinOpen = 4;
-int switchPinClosed = 5;
+int switchPinOpen = 5;
+int switchPinClosed = 4;
 int bridgeA = 12;
 int bridgeB = 14;
 bool DoorIsFullyShut = false;
@@ -192,77 +192,59 @@ void loop()
   {
     mqttConnect();
   }
-  Serial.println(digitalRead(switchPinOpen));
+  delay(2000);
+  Serial.println(command);
+  Serial.print(digitalRead(switchPinOpen));
   Serial.println(digitalRead(switchPinClosed));
-  command = "open";
 
   if (command == "open")
   {
-    msg = "Opening";
     mqttTopic = deviceID + "/status";
-    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+    mqttClient.publish(mqttTopic.c_str(), command.c_str());
     Serial.println("Running motor CW");
-    DoorIsFullyOpen = false;
-    while (command != "stop" && !DoorIsFullyOpen)
+    digitalWrite(bridgeA, HIGH);
+    digitalWrite(bridgeB, LOW);
+    while (command != "open")
     {
       if (digitalRead(switchPinOpen) == 0)
       {
-        DoorIsFullyOpen = true;
+        digitalWrite(bridgeA, LOW);
+        digitalWrite(bridgeB, LOW);
+        break;
       }
-      delay(100);
-      digitalWrite(bridgeA, HIGH);
-      digitalWrite(bridgeB, LOW);
-      Serial.println(digitalRead(switchPinOpen));
     }
-    digitalWrite(bridgeA, LOW);
-    digitalWrite(bridgeB, LOW);
   }
 
-  delay(2000);
-  command = "close";
   if (command == "close")
   {
-    msg = "closing";
     mqttTopic = deviceID + "/status";
-    mqttClient.publish(mqttTopic.c_str(), msg.c_str());
+    mqttClient.publish(mqttTopic.c_str(), command.c_str());
     Serial.println("Running motor CCW");
-
-    DoorIsFullyShut = false;
-    while (command != "stop" && !DoorIsFullyShut)
+    while (command != "stop")
     {
       if (digitalRead(switchPinClosed) == 0)
       {
-        DoorIsFullyShut = true;
+        digitalWrite(bridgeA, LOW);
+        digitalWrite(bridgeB, LOW);
+        break;
       }
-      delay(100);
       digitalWrite(bridgeA, LOW);
       digitalWrite(bridgeB, HIGH);
     }
-    digitalWrite(bridgeA, LOW);
-    digitalWrite(bridgeB, LOW);
+
+    if (command == "stop")
+    {
+      mqttTopic = deviceID + "/status";
+      mqttClient.publish(mqttTopic.c_str(), command.c_str());
+      Serial.println("Running motor stop");
+      digitalWrite(bridgeA, LOW);
+      digitalWrite(bridgeB, LOW);
+    }
+
+    command = "";
+    mqttClient.loop();
   }
-  delay(2000);
-
-  msg = "";
-  mqttClient.loop();
 }
-
-
-/*
-#include <Arduino.h>
-
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  Serial.print("Message arrived on topic: ");
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-  delay(500);
-  Serial.print("Message arrived on topic: ");
-}
-
 ; PlatformIO Project Configuration File
 ;
 ;   Build options: build flags, source filter
