@@ -1,0 +1,273 @@
+// DoorController.cpp
+
+#include <Arduino.h>
+// #include <WiFi.h>
+#include <PubSubClient.h>
+#include <ESP8266WiFi.h>
+
+const char *ssid = "sdev265";
+const char *password = "sdev265$";
+
+const char *mqttServer = "10.81.104.102";
+const int mqttPort = 1883;
+const char *mqttUser = "";
+const char *mqttPassword = "";
+
+String IPaddress = "";
+String MACaddress;
+String deviceID;
+String mqttTopic;
+int numberKeyPresses = 0;
+String msg;
+String command;
+int count = 0;
+
+int LED = 2;
+String LedState = "off";
+int switchPinOpen = 5;
+int switchPinClosed = 4;
+int bridgeA = 12;
+int bridgeB = 14;
+
+// variables to keep track of the timing of recent interrupts
+unsigned long button_time = 0;
+unsigned long last_button_time = 0;
+
+//====== methods ===========================================
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
+
+//  put your setup code here, to run once:
+void ConfigureDeviceID()
+{
+  deviceID = MACaddress.substring(MACaddress.length() - 5);
+  Serial.println(" Device ID: " + deviceID);
+}
+void ConfigureIO()
+{
+  // Configure I/O pins
+  pinMode(LED, OUTPUT);
+  pinMode(switchPinOpen, INPUT_PULLDOWN_16);
+  pinMode(switchPinClosed, INPUT_PULLDOWN_16);
+  pinMode(bridgeA, OUTPUT);
+  pinMode(bridgeB, OUTPUT);
+  // zero volts across motor to turn off
+  digitalWrite(bridgeA, LOW);
+  digitalWrite(bridgeB, LOW);
+  Serial.begin(9600);
+  Serial.println("I/O configured");
+  // 9600, 14400, 19200, 38400, 57600, and 115200 baud
+}
+void mqttCallBack(char *topic, byte *message, unsigned int length)
+{
+  Serial.print("Message arrived on topic: ");
+  Serial.println(topic);
+  msg = "";
+  for (unsigned int j = 0; j < length; j++)
+  {
+    msg += (char)message[j];
+  }
+  Serial.print("Command received: ");
+  Serial.println(msg);
+  command = msg;
+}
+void mqttConnect()
+{
+  // Loop until we are reconnected
+  while (!mqttClient.connected())
+  {
+    Serial.print("Attempting MQTT connection...");
+    mqttClient.setServer(mqttServer, mqttPort);
+    mqttClient.connect("ESPClient", mqttUser, mqttPassword);
+    mqttClient.setKeepAlive(600);
+
+    if (mqttClient.connected())
+    {
+      Serial.println("connected");
+      mqttClient.setCallback(mqttCallBack);
+      mqttTopic = deviceID;
+      Serial.println("mqttTopic: " + mqttTopic);
+      mqttClient.subscribe(mqttTopic.c_str());
+      Serial.println("subscribed to: " + mqttTopic);
+    }
+    else
+    {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+void ConfigureMQTT()
+{
+  mqttTopic = deviceID + "/command";
+  mqttClient.subscribe(mqttTopic.c_str());
+  Serial.println("subscribed to: " + mqttTopic);
+}
+void Connect2WiFi()
+{
+  // ################ WIFI ##############################################################
+  Serial.print("WiFi Scan start ... ");
+  int n = WiFi.scanNetworks();
+  Serial.println(String(n) + " wifi network(s) found");
+
+  /*
+  for (int i = 0; i < n; i++)
+  {
+    // Serial.printf("%d: %s, Ch:%d (%ddBm) %s\n", i + 1,WiFi.SSID(i).c_str(),
+    //     WiFi.channel(i), WiFi.RSSI(i), WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "");
+  }
+  */
+
+  {
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      String ss(ssid);
+      Serial.println("Connecting to WiFi: " + ss);
+      delay(100);
+    }
+    Serial.println("Connected to the WiFi network ");
+    Serial.println("       SSID: " + String(WiFi.SSID()));
+    Serial.println("    Channel: " + String(WiFi.channel()));
+    Serial.println("   Strength: " + String(WiFi.RSSI()) + " dbm");
+    Serial.println("MAC Address:" + WiFi.macAddress());
+    MACaddress = WiFi.macAddress();
+    Serial.println("SSID: " + WiFi.SSID());
+    IPaddress = WiFi.localIP().toString().c_str();
+    Serial.println("IP Address: " + IPaddress);
+    // long rssi = WiFi.RSSI();
+    Serial.println(" MAC Address: " + deviceID);
+  }
+}
+void PublishMQTT(String mqttTopic, String message)
+{
+  mqttTopic = deviceID + mqttTopic;
+  mqttClient.publish(mqttTopic.c_str(), message.c_str());
+}
+
+// ##### SETUP  SETUP  SETUP  SETUP  SETUP  SETUP #######
+void setup()
+{
+  Serial.println("Connect2WiFi");
+  Connect2WiFi();
+
+  Serial.println("ConfigureMQTT");
+  ConfigureMQTT();
+
+  Serial.println("mqttConnect");
+  mqttConnect();
+
+  Serial.println("ConfigureIO");
+  ConfigureIO();
+
+  Serial.println("ConfigureDeviceID");
+  ConfigureDeviceID();
+  
+  PublishMQTT("/info/MACaddress/", MACaddress);
+  PublishMQTT("/info/IPaddress/", IPaddress);
+  Serial.println("Published IP Address");
+
+  Serial.println("PublishMQTT hello world");
+  PublishMQTT("hello", "world");
+}
+// END OF SETUP
+
+//  ############## LOOP #################################################################
+//  #####################################################################################
+void loop()
+{
+  if (!mqttClient.connected())
+  {
+    mqttConnect();
+  }
+
+  delay(500);
+  // command = "open";
+  Serial.print("command: " + command);
+  Serial.print(digitalRead(switchPinOpen));
+  Serial.println(digitalRead(switchPinClosed));
+
+  PublishMQTT("status", "String(count)");
+  mqttClient.publish("/status".c_str(), String(count).c_str());
+  count += 1;
+  if (command == "open")
+  {
+    mqttTopic = deviceID + "/status";
+    mqttClient.publish(mqttTopic.c_str(), command.c_str());
+
+    Serial.println("Running motor CW");
+    digitalWrite(bridgeA, HIGH);
+    digitalWrite(bridgeB, LOW);
+    while (command != "open")
+    {
+      delay(10);
+      int limit = digitalRead(switchPinOpen);
+      delay(10);
+      if (limit == 0)
+      {
+        digitalWrite(bridgeA, LOW);
+        digitalWrite(bridgeB, LOW);
+        break;
+      }
+    }
+  }
+
+  // command = "close";
+  if (command == "close")
+  {
+    mqttTopic = deviceID + "/status";
+    mqttClient.publish(mqttTopic.c_str(), command.c_str());
+    Serial.println("Running motor CCW");
+    digitalWrite(bridgeA, LOW);
+    digitalWrite(bridgeB, HIGH);
+    Serial.println("Running motor CCW wait for switch close");
+    while (command != "stop")
+    {
+      delay(10);
+      int limit = digitalRead(switchPinClosed);
+      delay(10);
+      if (limit == 0)
+      {
+        digitalWrite(bridgeA, LOW);
+        digitalWrite(bridgeB, LOW);
+        break;
+      }
+    }
+
+    if (command == "stop")
+    {
+      mqttTopic = deviceID + "/status";
+      mqttClient.publish(mqttTopic.c_str(), command.c_str());
+      Serial.println("Running motor stop");
+      digitalWrite(bridgeA, LOW);
+      digitalWrite(bridgeB, LOW);
+    }
+
+    command = "";
+    mqttClient.loop();
+  }
+}
+
+/*
+; PlatformIO Project Configuration File
+;
+;   Build options: build flags, source filter
+;   Upload options: custom upload port, speed and extra flags
+;   Library options: dependencies, extra library storages
+;   Advanced options: extra scripting
+;
+; Please visit documentation for the other options and examples
+; https://docs.platformio.org/page/projectconf.html
+
+[env:esp12e]
+monitor_speed = 9600
+platform = espressif8266
+board = esp12e
+framework = arduino
+lib_deps =
+  khoih-prog/ESP_WifiManager@^1.12.1
+  knolleary/PubSubClient@^2.8
+*/
